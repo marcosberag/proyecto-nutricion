@@ -1,13 +1,28 @@
+"""
+Smart Diet Optimizer - Aplicación principal.
+
+Generador de menús semanales personalizados según objetivos nutricionales.
+Utiliza el dataset de Food.com con ~230k recetas.
+
+Autores: Rodrigo Galindo y Marcos Bermejo
+Asignatura: Algorítmica Numérica - UPM
+
+Usage:
+    python main.py
+"""
+
 import pandas as pd
 import os
 import time
 from src import data_loader, optimizer, pantry
+from src.linear_optimizer import LinearOptimizer
 from src.modelos import Recipe
 
 
 # --- 1. CONFIG & UTILS ---
 
-def show_disclaimer():
+def show_disclaimer() -> None:
+    """Muestra el aviso legal sobre los datos del dataset."""
     print("\n" + "-" * 60)
     print(" ⚠️  IMPORTANT DATA DISCLAIMER")
     print("-" * 60)
@@ -17,7 +32,25 @@ def show_disclaimer():
     print("-" * 60 + "\n")
 
 
-def filter_recipes_by_goal(df, goal):
+def filter_recipes_by_goal(df: pd.DataFrame, goal: str) -> pd.DataFrame:
+    """
+    Filtra recetas según el objetivo nutricional del usuario.
+    
+    Args:
+        df: DataFrame con las recetas procesadas.
+        goal: Código del objetivo:
+            '1' = Pérdida de peso (200-500 kcal, 15% proteína mín)
+            '2' = Ganancia muscular (400-1000 kcal, 25% proteína mín)
+            '3' = Equilibrado (300-800 kcal, 10% proteína mín)
+            '4' = Gourmet (sin restricciones)
+            
+    Returns:
+        DataFrame filtrado con recetas que cumplen los criterios.
+        
+    Notes:
+        Si hay menos de 50 recetas, expande los límites automáticamente.
+        Umbrales basados en recomendaciones OMS y guías dietéticas.
+    """
     print("⚙️  Applying nutritional filters...")
 
     # Define limits based on goal
@@ -53,9 +86,23 @@ def filter_recipes_by_goal(df, goal):
 
 # --- 2. INTERACTIVE MENU LOGIC ---
 
-def show_detail_and_actions(recipe, weekly_menu, idx, my_optimizer):
+def show_detail_and_actions(
+    recipe: Recipe,
+    weekly_menu: list[Recipe],
+    idx: int,
+    my_optimizer: optimizer.Optimizer
+) -> bool:
     """
-    Shows detail for ONE recipe and allows replacing it.
+    Muestra los detalles de una receta y permite reemplazarla.
+    
+    Args:
+        recipe: Receta a mostrar.
+        weekly_menu: Menú semanal completo.
+        idx: Índice de la receta en el menú.
+        my_optimizer: Instancia del optimizador para buscar sustitutos.
+        
+    Returns:
+        False siempre (indica que no se salió del menú principal).
     """
     while True:
         recipe.show_full_details()
@@ -82,9 +129,30 @@ def show_detail_and_actions(recipe, weekly_menu, idx, my_optimizer):
             print("⚠️ Invalid option.")
 
 
-def manage_interactive_menu(weekly_menu, my_optimizer, mode="weekly", day_idx=None):
+def manage_interactive_menu(
+    weekly_menu: list[Recipe],
+    my_optimizer: optimizer.Optimizer,
+    mode: str = "weekly",
+    day_idx: int | None = None
+) -> str | None:
     """
-    Main interaction loop.
+    Bucle principal de interacción con el menú.
+    
+    Args:
+        weekly_menu: Lista de 21 recetas (7 días x 3 comidas).
+        my_optimizer: Instancia del optimizador.
+        mode: 'weekly' para vista semanal, 'daily' para vista diaria.
+        day_idx: Índice del día (0-6) si mode='daily'.
+        
+    Returns:
+        'REGENERATE' si el usuario quiere regenerar el menú,
+        None en caso contrario.
+        
+    Commands:
+        - [Número]: Ver detalles de receta
+        - [C + Número]: Cambiar receta
+        - [R]: Regenerar semana completa (solo modo weekly)
+        - [Enter]: Volver al menú anterior
     """
     week_days = ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"]
 
@@ -197,13 +265,45 @@ if __name__ == '__main__':
         if len(candidates_df) > 50:
             print("📦 Converting data to objects...")
             recipe_objects = [Recipe(row) for index, row in candidates_df.iterrows()]
-            my_optimizer = optimizer.Optimizer(recipe_objects)
 
             profile_map = {"1": "fitness", "2": "fitness", "3": "balanced", "4": "gourmet"}
             selected_profile = profile_map.get(choice, "balanced")
 
-            # Generate initial menu
-            weekly_menu = my_optimizer.generate_structured_menu(selected_profile)
+            # Preguntar modo de optimización
+            print("\n⚙️  OPTIMIZATION MODE:")
+            print("   1. Heuristic (fast, good quality)")
+            print("   2. MILP - Linear Programming (slower, optimal solution)")
+            opt_mode = input("\n👉 Mode (1-2): ").strip()
+
+            # Configurar límites calóricos según perfil
+            cal_limits = {
+                "fitness": (1500, 80),    # cal_max_daily, prot_min_daily
+                "balanced": (2000, 50),
+                "gourmet": (2500, 30)
+            }
+            cal_max, prot_min = cal_limits.get(selected_profile, (2000, 50))
+
+            if opt_mode == "2":
+                # Usar optimizador lineal (MILP)
+                print("\n🧠 Initializing Linear Programming optimizer...")
+                linear_opt = LinearOptimizer(recipe_objects)
+                weekly_menu, stats = linear_opt.optimize_menu(
+                    profile=selected_profile,
+                    cal_max_daily=cal_max,
+                    prot_min_daily=prot_min
+                )
+                my_optimizer = optimizer.Optimizer(recipe_objects)  # Para reemplazos
+                
+                # Mostrar comparación con heurístico
+                print("\n📊 OPTIMIZATION RESULTS:")
+                print(f"   - Optimization status: {stats['optimization_status']}")
+                print(f"   - Total score: {stats['total_score']:.2f}")
+                print(f"   - Avg daily calories: {stats['avg_daily_calories']:.0f} kcal")
+                print(f"   - Avg daily protein: {stats['avg_daily_protein_pdv']:.1f}% DV")
+            else:
+                # Usar optimizador heurístico (original)
+                my_optimizer = optimizer.Optimizer(recipe_objects)
+                weekly_menu = my_optimizer.generate_structured_menu(selected_profile)
 
             while True:
                 # Main Menu with Sentence Case

@@ -1,8 +1,28 @@
+"""Módulo de carga y preprocesamiento de datos de recetas.
+
+Este módulo se encarga de cargar los datasets de Food.com,
+procesar las columnas y limpiar datos erróneos.
+"""
+
 import pandas as pd
 import ast
 
 
-def process_data(df):
+def process_data(df: pd.DataFrame | None) -> pd.DataFrame | None:
+    """
+    Procesa el DataFrame de recetas: convierte strings a listas y limpia datos.
+    
+    Args:
+        df: DataFrame crudo con las recetas cargadas.
+        
+    Returns:
+        DataFrame procesado y limpio, o None si la entrada es None.
+        
+    Notes:
+        - Convierte columnas 'nutrition', 'ingredients', 'steps', 'tags' de str a list
+        - Extrae columnas auxiliares 'calories' y 'protein'
+        - Elimina recetas con calorías < 10 o > 2500 (datos corruptos)
+    """
     if df is None: return None
 
     # 1. Format conversion (Strings to Lists)
@@ -29,7 +49,27 @@ def process_data(df):
     return clean_df
 
 
-def load_data(recipes_path, interactions_path, row_restriction=None):
+def load_data(
+    recipes_path: str,
+    interactions_path: str,
+    row_restriction: int | None = None
+) -> pd.DataFrame | None:
+    """
+    Carga y combina los datasets de recetas e interacciones.
+    
+    Args:
+        recipes_path: Ruta al archivo CSV de recetas (RAW_recipes.csv).
+        interactions_path: Ruta al archivo CSV de interacciones (RAW_interactions.csv).
+        row_restriction: Número máximo de filas a cargar (None = todas).
+        
+    Returns:
+        DataFrame combinado con recetas y sus valoraciones medias,
+        o None si ocurre un error de carga.
+        
+    Notes:
+        - Calcula la media de ratings por receta
+        - Recetas sin valoraciones reciben avg_rating = 0
+    """
     print(f"Loading data...")
     try:
         recipes = pd.read_csv(recipes_path, nrows=row_restriction)
