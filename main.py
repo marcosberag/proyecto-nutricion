@@ -14,7 +14,7 @@ Usage:
 import pandas as pd
 import os
 import time
-from src import data_loader, optimizer, pantry
+from src import data_loader, optimizer, shopping_list
 from src.linear_optimizer import LinearOptimizer
 from src.modelos import Recipe
 
@@ -337,7 +337,7 @@ if __name__ == '__main__':
                         print("⚠️ Enter a number.")
 
                 elif action == "3":
-                    pantry.print_shopping_list(weekly_menu)
+                    shopping_list.print_shopping_list(weekly_menu)
                     input("\nPress Enter to continue...")
 
                 elif action == "q":

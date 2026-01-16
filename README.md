@@ -163,10 +163,11 @@ proyecto-nutricion/
 │   └── RAW_interactions.csv # Valoraciones de usuarios
 └── src/
     ├── __init__.py
-    ├── data_loader.py   # Carga y preprocesamiento de datos
-    ├── modelos.py       # Clase Recipe con lógica de negocio
-    ├── optimizer.py     # Algoritmo de optimización y scoring
-    └── pantry.py        # Generación de lista de compra
+    ├── data_loader.py       # Carga y preprocesamiento de datos
+    ├── modelos.py           # Clase Recipe con lógica de negocio
+    ├── optimizer.py         # Algoritmo heurístico de optimización
+    ├── linear_optimizer.py  # Algoritmo MILP (óptimo)
+    └── shopping_list.py     # Generación de lista de compra
 ```
 
 ---
@@ -196,6 +197,11 @@ Se realizaron pruebas con diferentes perfiles para verificar:
 - [ ] Integrar precios reales mediante scraping de supermercados
 - [ ] Añadir soporte para dietas específicas (keto, vegana, etc.)
 - [ ] Optimización multi-objetivo con algoritmos genéticos
+- [ ] **Mejorar lista de la compra:** Actualmente muestra los 30 ingredientes más frecuentes del menú. En futuras versiones se podría:
+  - Permitir al usuario indicar qué ingredientes ya tiene en casa (gestión de despensa)
+  - Agrupar ingredientes por categorías (lácteos, carnes, verduras, etc.)
+  - Mostrar cantidades estimadas en lugar de solo frecuencias
+  - Exportar la lista a formato compatible con apps de supermercados
 
 ---
 
