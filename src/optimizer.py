@@ -53,26 +53,33 @@ class Optimizer:
             Score numérico. Mayor = mejor para el perfil dado.
             
         Notes:
-            Pesos del scoring:
-            - budget: prioriza bajo coste
-            - fitness: w_p=3.0, w_f=1.5, w_c=0.5 (proteína alta, grasa baja)
-            - gourmet: w_r=20.0 (solo rating)
-            - balanced: w_p=1.0, w_f=0.5, w_c=2.0 (equilibrado)
+            Pesos del scoring (justificación en README.md):
+            - budget: w_c=-10.0 (minimiza coste, penalización por calorías bajas)
+            - fitness: w_p=3.0, w_f=1.5, w_c=0.5 (basado en Phillips & Van Loon, 2011)
+            - gourmet: w_r=20.0, bonus +5 si cal>400 (prioriza satisfacción)
+            - balanced: w_p=1.5, w_f=0.5, w_c=1.0 (equilibrio proporcional)
         """
         score = 0.0
         cost = recipe.calculate_cost()
 
         # Scoring logic based on profile
         if profile == "budget":
-            if cost > 0: score = (10 / cost) * 5
-            if recipe.calories < 200: score -= 10
+            # Fórmula lineal: penaliza coste alto, bonifica calorías suficientes
+            score = -(cost * 10.0)  # Minimizar coste (peso negativo)
+            if recipe.calories < 200: 
+                score -= 10  # Penalización por comidas muy pequeñas
         elif profile == "fitness":
-            score = (recipe.protein_pdv * 3) - (recipe.fat_pdv * 1.5) - (cost * 0.5)
+            # Basado en Phillips & Van Loon (2011): atletas requieren 1.2-2.0g/kg proteína
+            # Ratio 2:1 proteína:grasa refleja prioridad en deportistas
+            score = (recipe.protein_pdv * 3.0) - (recipe.fat_pdv * 1.5) - (cost * 0.5)
         elif profile == "gourmet":
-            score = recipe.rating * 20
-            if recipe.calories > 400: score += 5
+            # Prioriza satisfacción del usuario (rating) con bonus por porciones generosas
+            score = recipe.rating * 20.0
+            if recipe.calories > 400: 
+                score += 5  # Bonus: platos más sustanciosos suelen ser más satisfactorios
         elif profile == "balanced":
-            score = recipe.protein_pdv - (recipe.fat_pdv * 0.5) - (cost * 2)
+            # Equilibrio: proteína ligeramente priorizada, coste y grasa penalizados igual
+            score = (recipe.protein_pdv * 1.5) - (recipe.fat_pdv * 0.5) - (cost * 1.0)
 
         return score
 

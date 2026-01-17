@@ -116,23 +116,35 @@ $$\max \sum_{i=1}^{n} x_i \cdot \text{score}_i$$
 
 ### Perfiles y sus pesos
 
-| Perfil | Proteína ($w_p$) | Grasa ($w_f$) | Coste ($w_c$) | Rating ($w_r$) |
-|--------|------------------|---------------|---------------|----------------|
-| **Fitness** | 3.0 | 1.5 | 0.5 | 0 |
-| **Budget** | 0 | 0 | 10.0 | 0 |
-| **Gourmet** | 0 | 0 | 0 | 20.0 |
-| **Balanced** | 1.0 | 0.5 | 2.0 | 0 |
+| Perfil | Proteína ($w_p$) | Grasa ($w_f$) | Coste ($w_c$) | Rating ($w_r$) | Bonus |
+|--------|------------------|---------------|---------------|----------------|-------|
+| **Fitness** | 3.0 | -1.5 | -0.5 | 0 | - |
+| **Budget** | 0 | 0 | -10.0 | 0 | -10 si cal<200 |
+| **Gourmet** | 0 | 0 | 0 | 20.0 | +5 si cal>400 |
+| **Balanced** | 1.5 | -0.5 | -1.0 | 0 | - |
+
+**Justificación científica de los pesos:**
+
+1. **Fitness ($w_p=3.0$, $w_f=-1.5$):** Basado en Phillips & Van Loon (2011), los atletas requieren 1.2-2.0 g/kg de proteína diaria para óptima síntesis muscular. El ratio 2:1 proteína:grasa refleja la prioridad de macros en deportistas.
+
+2. **Budget ($w_c=-10.0$):** Fórmula lineal que penaliza directamente el coste estimado. El penalty de -10 para comidas <200 kcal evita seleccionar recetas nutricionalmente insuficientes.
+
+3. **Gourmet ($w_r=20.0$, bonus +5):** Prioriza la satisfacción del usuario medida por ratings. El bonus para comidas >400 kcal refleja que platos más sustanciosos suelen ser más satisfactorios.
+
+4. **Balanced ($w_p=1.5$, $w_f=-0.5$, $w_c=-1.0$):** Equilibrio proporcional donde la proteína tiene ligera prioridad (factor de salud), mientras coste y grasa se penalizan moderadamente.
 
 ### Justificación de los umbrales calóricos
 
-Los rangos de calorías por comida se basan en guías dietéticas generales y se adaptan a cada perfil:
+Los rangos de calorías por comida se basan en guías dietéticas generales (USDA, 2020; OMS, 2020) y se adaptan a cada perfil:
 
-| Perfil | Calorías/comida | Proteína mín. | Justificación |
-|--------|-----------------|---------------|---------------|
-| **Fitness** | 300-900 kcal | 20% DV | Alto aporte proteico con rango calórico moderado |
-| **Budget** | 200-700 kcal | 10% DV | Priorización de coste con límites conservadores |
-| **Balanced** | 300-800 kcal | 10% DV | Rango medio y equilibrado |
-| **Gourmet** | 0-1500 kcal | 0% DV | Sin restricciones, prioriza sabor |
+| Perfil | Calorías/comida | Proteína mín. | Cal/día (MILP) | Prot/día (MILP) | Justificación |
+|--------|-----------------|---------------|----------------|-----------------|---------------|
+| **Fitness** | 300-900 kcal | 20% DV | 2200 kcal | 120% DV (~60g) | Alto aporte proteico para síntesis muscular |
+| **Budget** | 200-700 kcal | 10% DV | 1800 kcal | 60% DV (~30g) | Límites conservadores para minimizar coste |
+| **Balanced** | 300-800 kcal | 10% DV | 2000 kcal | 80% DV (~40g) | Rango medio según guías dietéticas |
+| **Gourmet** | 0-1500 kcal | 0% DV | 2500 kcal | 40% DV (~20g) | Sin restricciones, prioriza satisfacción |
+
+**Nota sobre unidades de proteína:** Los valores de proteína en el MILP se expresan como % del Valor Diario (%DV), donde 100% DV ≈ 50g de proteína según FDA.
 
 ### Estimación de coste
 

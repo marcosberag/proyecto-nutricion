@@ -276,13 +276,15 @@ if __name__ == '__main__':
             opt_mode = input("\n👉 Mode (1-2): ").strip()
 
             # Configurar límites calóricos según perfil
+            # cal_max_daily: calorías máximas por día (kcal)
+            # prot_min_daily: proteína mínima por día (% DV, donde 100% DV ≈ 50g)
             cal_limits = {
-                "fitness": (2000, 80),    # cal_max_daily, prot_min_daily
-                "budget": (1800, 50),
-                "balanced": (2000, 50),
-                "gourmet": (2500, 30)
+                "fitness": (2200, 120),   # Alto en proteína (120% DV ≈ 60g/día)
+                "budget": (1800, 60),     # Moderado (60% DV ≈ 30g/día)
+                "balanced": (2000, 80),   # Equilibrado (80% DV ≈ 40g/día)
+                "gourmet": (2500, 40)     # Sin restricción fuerte de proteína
             }
-            cal_max, prot_min = cal_limits.get(selected_profile, (2000, 50))
+            cal_max, prot_min = cal_limits.get(selected_profile, (2000, 80))
 
             if opt_mode == "2":
                 # Usar optimizador lineal (MILP)

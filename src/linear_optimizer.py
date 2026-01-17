@@ -68,6 +68,13 @@ class LinearOptimizer:
             
         Returns:
             Array numpy con el score de cada receta.
+            
+        Notes:
+            Pesos consistentes con optimizer.py (ver justificación en README.md):
+            - budget: w_c=-10.0 (minimiza coste)
+            - fitness: w_p=3.0, w_f=1.5, w_c=0.5
+            - gourmet: w_r=20.0, bonus +5 si cal>400
+            - balanced: w_p=1.5, w_f=0.5, w_c=1.0
         """
         scores = np.zeros(self.n)
         
@@ -75,13 +82,16 @@ class LinearOptimizer:
             cost = recipe.calculate_cost()
             
             if profile == "budget":
-                scores[i] = (10 / cost) * 5 if cost > 0 else 0
+                # Fórmula lineal consistente con optimizer.py
+                scores[i] = -(cost * 10.0)
+                if recipe.calories < 200:
+                    scores[i] -= 10
             elif profile == "fitness":
-                scores[i] = (recipe.protein_pdv * 3) - (recipe.fat_pdv * 1.5) - (cost * 0.5)
+                scores[i] = (recipe.protein_pdv * 3.0) - (recipe.fat_pdv * 1.5) - (cost * 0.5)
             elif profile == "gourmet":
-                scores[i] = recipe.rating * 20 + (5 if recipe.calories > 400 else 0)
+                scores[i] = recipe.rating * 20.0 + (5 if recipe.calories > 400 else 0)
             else:  # balanced
-                scores[i] = recipe.protein_pdv - (recipe.fat_pdv * 0.5) - (cost * 2)
+                scores[i] = (recipe.protein_pdv * 1.5) - (recipe.fat_pdv * 0.5) - (cost * 1.0)
         
         return scores
     
@@ -94,8 +104,8 @@ class LinearOptimizer:
         Construye las restricciones lineales del problema.
         
         Args:
-            cal_max_daily: Calorías máximas por día.
-            prot_min_daily: Proteína mínima por día (% DV).
+            cal_max_daily: Calorías máximas por día (kcal).
+            prot_min_daily: Proteína mínima por día (% DV, donde 100% DV ≈ 50g).
             
         Returns:
             Lista de objetos LinearConstraint para scipy.
@@ -111,6 +121,8 @@ class LinearOptimizer:
         ))
         
         # --- Restricción 2: Proteína total ≥ ProtMin * 7 ---
+        # prot_min_daily está en % DV (100% DV ≈ 50g según FDA)
+        # protein_pdv de cada receta también está en % DV
         prot_coeffs = np.array([r.protein_pdv for r in self.recipes])
         constraints.append(LinearConstraint(
             A=prot_coeffs,
