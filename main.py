@@ -286,27 +286,45 @@ if __name__ == '__main__':
             }
             cal_max, prot_min = cal_limits.get(selected_profile, (2000, 80))
 
-            if opt_mode == "2":
+            use_milp = (opt_mode == "2")
+            linear_opt: LinearOptimizer | None = None
+
+            def generate_menu(
+                *,
+                excluded_names: set[str] | None = None
+            ) -> tuple[list[Recipe], dict | None]:
+                """Genera el menú usando el modo elegido (MILP o heurístico)."""
+                if use_milp:
+                    assert linear_opt is not None
+                    menu, stats_local = linear_opt.optimize_menu(
+                        profile=selected_profile,
+                        cal_max_daily=cal_max,
+                        prot_min_daily=prot_min,
+                        excluded_names=excluded_names
+                    )
+                    return menu, stats_local
+
+                return my_optimizer.generate_structured_menu(selected_profile), None
+
+            if use_milp:
                 # Usar optimizador lineal (MILP)
                 print("\n🧠 Initializing Linear Programming optimizer...")
                 linear_opt = LinearOptimizer(recipe_objects)
-                weekly_menu, stats = linear_opt.optimize_menu(
-                    profile=selected_profile,
-                    cal_max_daily=cal_max,
-                    prot_min_daily=prot_min
-                )
+                my_optimizer = optimizer.Optimizer(recipe_objects)  # Para reemplazos
+                weekly_menu, stats = generate_menu()
                 my_optimizer = optimizer.Optimizer(recipe_objects)  # Para reemplazos
                 
                 # Mostrar comparación con heurístico
                 print("\n📊 OPTIMIZATION RESULTS:")
-                print(f"   - Optimization status: {stats['optimization_status']}")
-                print(f"   - Total score: {stats['total_score']:.2f}")
-                print(f"   - Avg daily calories: {stats['avg_daily_calories']:.0f} kcal")
-                print(f"   - Avg daily protein: {stats['avg_daily_protein_pdv']:.1f}% DV")
+                if stats is not None:
+                    print(f"   - Optimization status: {stats['optimization_status']}")
+                    print(f"   - Total score: {stats['total_score']:.2f}")
+                    print(f"   - Avg daily calories: {stats['avg_daily_calories']:.0f} kcal")
+                    print(f"   - Avg daily protein: {stats['avg_daily_protein_pdv']:.1f}% DV")
             else:
                 # Usar optimizador heurístico (original)
                 my_optimizer = optimizer.Optimizer(recipe_objects)
-                weekly_menu = my_optimizer.generate_structured_menu(selected_profile)
+                weekly_menu, _stats = generate_menu()
 
             while True:
                 # Main Menu with Sentence Case
@@ -323,8 +341,22 @@ if __name__ == '__main__':
                 if action == "1":
                     result = manage_interactive_menu(weekly_menu, my_optimizer, mode="weekly")
                     if result == "REGENERATE":
-                        print("🎲 Reshuffling universe...")
-                        weekly_menu = my_optimizer.generate_structured_menu(selected_profile)
+                        if use_milp:
+                            print("🎲 Regenerating week with MILP (no repeats)...")
+                            prev_names = {r.name for r in weekly_menu}
+                            try:
+                                weekly_menu, stats = generate_menu(excluded_names=prev_names)
+                            except ValueError:
+                                print("⚠️ Could not find a fully disjoint menu with current constraints.")
+                                print("   Regenerating with MILP allowing repeats...")
+                                weekly_menu, stats = generate_menu(excluded_names=None)
+
+                            if stats is not None:
+                                print(f"   - Avg daily calories: {stats['avg_daily_calories']:.0f} kcal")
+                                print(f"   - Avg daily protein: {stats['avg_daily_protein_pdv']:.1f}% DV")
+                        else:
+                            print("🎲 Reshuffling universe...")
+                            weekly_menu, _stats = generate_menu()
 
                 elif action == "2":
                     print("\nSelect day (1-7):")

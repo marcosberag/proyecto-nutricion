@@ -92,7 +92,7 @@ class LinearOptimizer:
                 scores[i] = recipe.rating * 20.0 + (5 if recipe.calories > 400 else 0)
             else:  # balanced
                 scores[i] = (recipe.protein_pdv * 1.5) - (recipe.fat_pdv * 0.5) - (cost * 1.0)
-        
+
         return scores
     
     def _build_constraints(
@@ -154,7 +154,8 @@ class LinearOptimizer:
         self,
         profile: str,
         cal_max_daily: float = 2000,
-        prot_min_daily: float = 50
+        prot_min_daily: float = 50,
+        excluded_names: set[str] | None = None
     ) -> tuple[list['Recipe'], dict]:
         """
         Encuentra el menú semanal óptimo usando MILP.
@@ -167,6 +168,8 @@ class LinearOptimizer:
             profile: Perfil nutricional ('fitness', 'budget', 'gourmet', 'balanced').
             cal_max_daily: Calorías máximas permitidas por día.
             prot_min_daily: Proteína mínima requerida por día (% DV).
+            excluded_names: Si se proporciona, estas recetas (por nombre) NO pueden
+                aparecer en el menú (útil para regenerar una semana sin repetir platos).
             
         Returns:
             Tupla (menu, stats) donde:
@@ -177,7 +180,7 @@ class LinearOptimizer:
         print(f"   Constraints: cal ≤ {cal_max_daily}/day, prot ≥ {prot_min_daily}%/day")
         
         # 1. Calcular scores (función objetivo)
-        scores = self._calculate_scores(profile)
+        scores = self._calculate_scores(profile=profile)
         
         # scipy.milp MINIMIZA, así que negamos los scores para maximizar
         c = -scores
@@ -186,7 +189,17 @@ class LinearOptimizer:
         constraints = self._build_constraints(cal_max_daily, prot_min_daily)
         
         # 3. Variables binarias: x_i ∈ {0, 1}
-        bounds = Bounds(lb=0, ub=1)
+        #    Si excluded_names se proporciona, fijamos ub=0 para esas recetas.
+        lb = np.zeros(self.n)
+        ub = np.ones(self.n)
+        excluded_idx: set[int] = set()
+        if excluded_names:
+            excluded_idx = {i for i, r in enumerate(self.recipes) if r.name in excluded_names}
+            if excluded_idx:
+                ub[list(excluded_idx)] = 0
+                print(f"   🚫 Excluding {len(excluded_idx)} recipes from previous menu.")
+
+        bounds = Bounds(lb=lb, ub=ub)
         integrality = np.ones(self.n)  # 1 = variable entera
         
         # 4. Resolver el problema MILP
@@ -201,8 +214,8 @@ class LinearOptimizer:
         
         if not result.success:
             print(f"   ⚠️ Optimization failed: {result.message}")
-            print("   Falling back to relaxed constraints...")
-            return self._fallback_optimize(profile)
+            print("   Falling back to greedy selection...")
+            return self._fallback_optimize(profile, excluded_idx)
         
         # 5. Extraer recetas seleccionadas
         selected_indices = np.where(result.x > 0.5)[0]
@@ -251,7 +264,11 @@ class LinearOptimizer:
         
         return menu, stats
     
-    def _fallback_optimize(self, profile: str) -> tuple[list['Recipe'], dict]:
+    def _fallback_optimize(
+        self,
+        profile: str,
+        excluded_idx: set[int] | None = None
+    ) -> tuple[list['Recipe'], dict]:
         """
         Optimización de respaldo con restricciones relajadas.
         
@@ -274,7 +291,10 @@ class LinearOptimizer:
         selected_breakfasts = []
         selected_mains = []
         
+        excluded_idx = excluded_idx or set()
         for idx in sorted_indices:
+            if idx in excluded_idx:
+                continue
             if idx in self.breakfast_indices and len(selected_breakfasts) < 7:
                 selected_breakfasts.append(idx)
             elif idx in self.main_indices and len(selected_mains) < 14:
@@ -283,6 +303,12 @@ class LinearOptimizer:
             if len(selected_breakfasts) == 7 and len(selected_mains) == 14:
                 break
         
+        if len(selected_breakfasts) < 7 or len(selected_mains) < 14:
+            raise ValueError(
+                "No feasible menu found with the current exclusions/constraints. "
+                "Try enlarging the candidate pool or relaxing constraints."
+            )
+
         # Construir menú
         menu = []
         for day in range(7):

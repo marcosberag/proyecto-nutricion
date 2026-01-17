@@ -114,6 +114,17 @@ $$\max \sum_{i=1}^{n} x_i \cdot \text{score}_i$$
 - ✅ Respeta restricciones estrictas (calorías, proteína)
 - ✅ Fundamentación matemática rigurosa
 
+**Determinismo y regeneración del menú (MILP):**
+
+- El MILP es esencialmente *determinista*: con el mismo conjunto de recetas candidatas y las mismas restricciones, tiende a devolver el mismo menú óptimo.
+- Para aportar variedad sin romper restricciones, al usar **Regenerar** en modo MILP el sistema intenta construir un **nuevo menú semanal sin repetir ningún plato** respecto al menú anterior (excluyendo por nombre todas las recetas ya usadas).
+- Si con esa exclusión el problema queda infactible (p. ej. pool pequeño o restricciones demasiado estrictas), se muestra un aviso y se regenera permitiendo repeticiones.
+
+**Cambio de una sola receta (variedad rápida):**
+
+- Al reemplazar una receta individual desde el menú interactivo, se usa el modo **heurístico** para encontrar un sustituto del mismo tipo (desayuno/principal) y no repetir dentro del menú.
+- Esto está hecho a propósito: es rápido y añade variedad, aunque puede “pasar por alto” las restricciones globales estrictas del MILP (calorías/proteína semanales).
+
 ### Perfiles y sus pesos
 
 | Perfil | Proteína ($w_p$) | Grasa ($w_f$) | Coste ($w_c$) | Rating ($w_r$) | Bonus |
