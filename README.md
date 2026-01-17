@@ -12,7 +12,7 @@
 
 ### Características principales
 
-- 🎯 **4 perfiles nutricionales:** Pérdida de peso, ganancia muscular, dieta equilibrada y gourmet
+- 🎯 **4 perfiles nutricionales:** Fitness, Budget, Gourmet y Balanced
 - 📅 **Menú semanal estructurado:** 3 comidas diarias (desayuno, almuerzo, cena)
 - 🔄 **Intercambio de recetas:** Posibilidad de reemplazar cualquier receta manteniendo el tipo de comida
 - 🛒 **Lista de la compra automática:** Generación de ingredientes necesarios
@@ -123,15 +123,15 @@ $$\max \sum_{i=1}^{n} x_i \cdot \text{score}_i$$
 | **Gourmet** | 0 | 0 | 0 | 20.0 |
 | **Balanced** | 1.0 | 0.5 | 2.0 | 0 |
 
-### Justificación científica de los umbrales calóricos
+### Justificación de los umbrales calóricos
 
-Los rangos de calorías por comida se basan en las recomendaciones de la OMS y guías nutricionales:
+Los rangos de calorías por comida se basan en guías dietéticas generales y se adaptan a cada perfil:
 
 | Perfil | Calorías/comida | Proteína mín. | Justificación |
 |--------|-----------------|---------------|---------------|
-| **Pérdida de peso** | 200-500 kcal | 15% DV | Déficit calórico moderado (~1500 kcal/día) [1] |
-| **Ganancia muscular** | 400-1000 kcal | 25% DV | Superávit + alto aporte proteico [2] |
-| **Equilibrado** | 300-800 kcal | 10% DV | Rango medio según RDA [3] |
+| **Fitness** | 300-900 kcal | 20% DV | Alto aporte proteico con rango calórico moderado |
+| **Budget** | 200-700 kcal | 10% DV | Priorización de coste con límites conservadores |
+| **Balanced** | 300-800 kcal | 10% DV | Rango medio y equilibrado |
 | **Gourmet** | 0-1500 kcal | 0% DV | Sin restricciones, prioriza sabor |
 
 ### Estimación de coste

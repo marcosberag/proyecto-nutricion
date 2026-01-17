@@ -34,34 +34,34 @@ def show_disclaimer() -> None:
 
 def filter_recipes_by_goal(df: pd.DataFrame, goal: str) -> pd.DataFrame:
     """
-    Filtra recetas según el objetivo nutricional del usuario.
-    
+    Filtra recetas según el perfil nutricional del usuario.
+
     Args:
         df: DataFrame con las recetas procesadas.
-        goal: Código del objetivo:
-            '1' = Pérdida de peso (200-500 kcal, 15% proteína mín)
-            '2' = Ganancia muscular (400-1000 kcal, 25% proteína mín)
-            '3' = Equilibrado (300-800 kcal, 10% proteína mín)
-            '4' = Gourmet (sin restricciones)
-            
+        goal: Código del perfil:
+            '1' = Fitness (300-900 kcal, 20% proteína mín)
+            '2' = Budget (200-700 kcal, 10% proteína mín)
+            '3' = Gourmet (sin restricciones)
+            '4' = Balanced (300-800 kcal, 10% proteína mín)
+
     Returns:
         DataFrame filtrado con recetas que cumplen los criterios.
-        
+
     Notes:
         Si hay menos de 50 recetas, expande los límites automáticamente.
-        Umbrales basados en recomendaciones OMS y guías dietéticas.
+        Umbrales basados en guías dietéticas generales.
     """
     print("⚙️  Applying nutritional filters...")
 
     # Define limits based on goal
-    if goal == "1":  # Weight Loss
-        min_cal, max_cal, min_prot = 200, 500, 15
-    elif goal == "2":  # Muscle Gain
-        min_cal, max_cal, min_prot = 400, 1000, 25
-    elif goal == "3":  # Balanced
-        min_cal, max_cal, min_prot = 300, 800, 10
-    else:  # Gourmet
+    if goal == "1":  # Fitness
+        min_cal, max_cal, min_prot = 300, 900, 20
+    elif goal == "2":  # Budget
+        min_cal, max_cal, min_prot = 200, 700, 10
+    elif goal == "3":  # Gourmet
         min_cal, max_cal, min_prot = 0, 1500, 0
+    else:  # Balanced
+        min_cal, max_cal, min_prot = 300, 800, 10
 
     filtered_df = df[
         (df['calories'] >= min_cal) &
@@ -253,11 +253,11 @@ if __name__ == '__main__':
         print("\n--- 🥗 SMART DIET OPTIMIZER ---")
         show_disclaimer()
 
-        print("🎯 CHOOSE YOUR GOAL:")
-        print("   1. Weight Loss")
-        print("   2. Muscle Gain")
-        print("   3. Balanced Diet")
-        print("   4. Gourmet (Flavor focus)")
+        print("🎯 CHOOSE YOUR PROFILE:")
+        print("   1. Fitness")
+        print("   2. Budget")
+        print("   3. Gourmet")
+        print("   4. Balanced")
 
         choice = input("\n👉 Your choice (1-4): ")
         candidates_df = filter_recipes_by_goal(df, choice)
@@ -266,7 +266,7 @@ if __name__ == '__main__':
             print("📦 Converting data to objects...")
             recipe_objects = [Recipe(row) for index, row in candidates_df.iterrows()]
 
-            profile_map = {"1": "fitness", "2": "fitness", "3": "balanced", "4": "gourmet"}
+            profile_map = {"1": "fitness", "2": "budget", "3": "gourmet", "4": "balanced"}
             selected_profile = profile_map.get(choice, "balanced")
 
             # Preguntar modo de optimización
@@ -277,7 +277,8 @@ if __name__ == '__main__':
 
             # Configurar límites calóricos según perfil
             cal_limits = {
-                "fitness": (1500, 80),    # cal_max_daily, prot_min_daily
+                "fitness": (2000, 80),    # cal_max_daily, prot_min_daily
+                "budget": (1800, 50),
                 "balanced": (2000, 50),
                 "gourmet": (2500, 30)
             }
