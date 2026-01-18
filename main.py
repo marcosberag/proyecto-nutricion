@@ -312,7 +312,6 @@ if __name__ == '__main__':
                 linear_opt = LinearOptimizer(recipe_objects)
                 my_optimizer = optimizer.Optimizer(recipe_objects)  # Para reemplazos
                 weekly_menu, stats = generate_menu()
-                my_optimizer = optimizer.Optimizer(recipe_objects)  # Para reemplazos
                 
                 # Mostrar comparación con heurístico
                 print("\n📊 OPTIMIZATION RESULTS:")

@@ -25,6 +25,8 @@ def process_data(df: pd.DataFrame | None) -> pd.DataFrame | None:
     """
     if df is None: return None
 
+    df = df.copy()  # Avoid SettingWithCopyWarning
+
     # 1. Format conversion (Strings to Lists)
     list_columns = ['nutrition', 'ingredients', 'steps', 'tags']
 

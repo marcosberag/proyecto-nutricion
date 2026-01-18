@@ -129,10 +129,10 @@ $$\max \sum_{i=1}^{n} x_i \cdot \text{score}_i$$
 
 | Perfil | Proteína ($w_p$) | Grasa ($w_f$) | Coste ($w_c$) | Rating ($w_r$) | Bonus |
 |--------|------------------|---------------|---------------|----------------|-------|
-| **Fitness** | 3.0 | -1.5 | -0.5 | 0 | - |
-| **Budget** | 0 | 0 | -10.0 | 0 | -10 si cal<200 |
+| **Fitness** | 3.0 | 1.5 | 0.5 | 0 | - |
+| **Budget** | 0 | 0 | 10.0 | 0 | -10 si cal<200 |
 | **Gourmet** | 0 | 0 | 0 | 20.0 | +5 si cal>400 |
-| **Balanced** | 1.5 | -0.5 | -1.0 | 0 | - |
+| **Balanced** | 1.5 | 0.5 | 1.0 | 0 | - |
 
 **Justificación científica de los pesos:**
 

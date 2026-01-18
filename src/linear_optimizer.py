@@ -242,6 +242,9 @@ class LinearOptimizer:
             if dinner_idx < len(selected_mains):
                 menu.append(self.recipes[selected_mains[dinner_idx]])
         
+        # Validar estructura del menú
+        assert len(menu) == 21, f"Menu should have 21 recipes, got {len(menu)}"
+
         # 7. Calcular estadísticas
         total_cal = sum(r.calories for r in menu)
         total_prot = sum(r.protein_pdv for r in menu)
